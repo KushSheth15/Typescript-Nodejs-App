@@ -21,12 +21,16 @@ const product = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
         },
         price: {
-            type: DataTypes.NUMBER
+            type: DataTypes.FLOAT
         },
         userId: {
-            type: DataTypes.STRING,
+            type: DataTypes.UUID,
             allowNull: false
         },
+        categoryId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        }
     }, {
         sequelize,
         underscored: true,
@@ -36,8 +40,12 @@ const product = (sequelize, DataTypes) => {
         tableName: 'products',
     });
     Product.associate = (models) => {
-        Product.belongsTo(models.Product, {
+        Product.belongsTo(models.User, {
             foreignKey: 'userId',
+            targetKey: 'id',
+        });
+        Product.belongsTo(models.Category, {
+            foreignKey: 'categoryId',
             targetKey: 'id',
         });
     };

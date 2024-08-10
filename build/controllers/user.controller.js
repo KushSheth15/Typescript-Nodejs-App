@@ -10,6 +10,7 @@ const api_response_1 = __importDefault(require("../utils/api-response"));
 const async_handler_1 = __importDefault(require("../utils/async-handler"));
 const sequelize_client_1 = __importDefault(require("../sequelize-client"));
 const jwt_token_1 = require("../utils/jwt.token");
+const encryption_1 = __importDefault(require("../utils/encryption"));
 exports.registerUser = (0, async_handler_1.default)(async (req, res, next) => {
     const { email, password, firstName, lastName } = req.body;
     if (!email || !password) {
@@ -47,16 +48,18 @@ exports.loginUser = (0, async_handler_1.default)(async (req, res, next) => {
         ;
         const accessToken = (0, jwt_token_1.generateAccessToken)({ userId: user.id, email: user.email });
         const refreshToken = (0, jwt_token_1.generateRefreshToken)({ userId: user.id });
+        const encryptedAccessToken = encryption_1.default.encryptWithAES(accessToken);
+        const encryptedRefreshToken = encryption_1.default.encryptWithAES(refreshToken);
         await sequelize_client_1.default.AccessToken.bulkCreate([
             {
                 tokenType: 'ACCESS',
-                token: accessToken,
+                token: encryptedAccessToken,
                 userId: user.id,
                 expiredAt: new Date(Date.now() + 15 * 60 * 1000),
             },
             {
                 tokenType: 'REFRESH',
-                token: refreshToken,
+                token: encryptedRefreshToken,
                 userId: user.id,
                 expiredAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             }

@@ -34,6 +34,7 @@ const config_1 = __importDefault(require("../config/config"));
 const sequelize_client_1 = __importDefault(require("../sequelize-client"));
 const api_error_1 = __importDefault(require("../utils/api-error"));
 const async_handler_1 = __importDefault(require("../utils/async-handler"));
+const encryption_1 = __importDefault(require("../utils/encryption"));
 exports.verifyToken = (0, async_handler_1.default)(async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -43,16 +44,19 @@ exports.verifyToken = (0, async_handler_1.default)(async (req, res, next) => {
         // Verify the token
         const decoded = jsonwebtoken_1.default.verify(token, config_1.default.JWT.SECRET);
         // Find the token in the database
-        const accessToken = await sequelize_client_1.default.AccessToken.findOne({
+        const encryptedToken = await sequelize_client_1.default.AccessToken.findOne({
             where: {
-                token,
                 userId: decoded.userId,
                 tokenType: 'ACCESS',
             }
         });
-        if (!accessToken) {
+        if (!encryptedToken) {
             console.log('Token not found or expired');
             return next(new api_error_1.default(401, 'Unauthorized - Token not found or expired'));
+        }
+        const decryptedToken = encryption_1.default.decryptWithAES(encryptedToken.token);
+        if (decryptedToken !== token) {
+            return next(new api_error_1.default(401, 'Unauthorized - Token mismatch'));
         }
         // Find the user
         const user = await sequelize_client_1.default.User.findOne({

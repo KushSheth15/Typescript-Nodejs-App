@@ -7,6 +7,7 @@ import db from '../sequelize-client';
 import ApiError from '../utils/api-error';
 import asyncHandler from '../utils/async-handler';
 import User from '../models/user.model';
+import encryption from '../utils/encryption';
 
 interface MyUserRequest extends Request{
   token?: string;
@@ -21,24 +22,29 @@ interface MyUserRequest extends Request{
     }
   
     try {
-      // Verify the token
-      const decoded = jwt.verify(token, config.JWT.SECRET as string) as { userId: string };
-      
 
+       // Verify the token
+       const decoded = jwt.verify(token, config.JWT.SECRET as string) as { userId: string };
+     
       // Find the token in the database
-      const accessToken = await db.AccessToken.findOne({
+      const encryptedToken  = await db.AccessToken.findOne({
         where: {
-          token,
           userId:decoded.userId,
           tokenType: 'ACCESS',
         }
       });
   
-      if (!accessToken) {
+      if (!encryptedToken) {
         console.log('Token not found or expired');
         return next(new ApiError(401, 'Unauthorized - Token not found or expired'));
       }
+
+      const decryptedToken = encryption.decryptWithAES(encryptedToken.token);
   
+      if (decryptedToken !== token) {
+        return next(new ApiError(401, 'Unauthorized - Token mismatch'));
+      }
+
       // Find the user
       const user = await db.User.findOne({
         where: { id: decoded.userId }
@@ -47,7 +53,6 @@ interface MyUserRequest extends Request{
       if (!user) {
         return next(new ApiError(401, 'Unauthorized - User not found'));
       }
-      
       
       // Attach token and user to the request object
       req.token = token;

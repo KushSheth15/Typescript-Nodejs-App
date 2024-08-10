@@ -3,10 +3,11 @@ import { DataTypes, Sequelize } from 'sequelize';
 
 dotenv.config();
 
-import config from './models/migrations/config'; 
+import config from './models/config'; 
 import { accessToken } from './models/access-token.model';
 import { user } from './models/user.model';
 import {product} from './models/product.model';
+import {category} from './models/category.model';
 
 const env = process.env.NODE_ENV || 'development';
 
@@ -27,6 +28,7 @@ const db = {
   User: user(sequelize, DataTypes),
   AccessToken: accessToken(sequelize, DataTypes),
   Product:product(sequelize, DataTypes),
+  Category: category(sequelize, DataTypes),
   models: sequelize.models
 };
 

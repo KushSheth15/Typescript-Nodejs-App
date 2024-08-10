@@ -55,6 +55,10 @@ const user = (sequelize, DataTypes) => {
             foreignKey: 'userId',
             sourceKey: 'id'
         });
+        User.hasMany(models.Product, {
+            foreignKey: 'userId',
+            sourceKey: 'id'
+        });
     };
     return User;
 };

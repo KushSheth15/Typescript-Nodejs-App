@@ -29,10 +29,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 const sequelize_1 = require("sequelize");
 dotenv.config();
-const config_1 = __importDefault(require("./models/migrations/config"));
+const config_1 = __importDefault(require("./models/config"));
 const access_token_model_1 = require("./models/access-token.model");
 const user_model_1 = require("./models/user.model");
 const product_model_1 = require("./models/product.model");
+const category_model_1 = require("./models/category.model");
 const env = process.env.NODE_ENV || 'development';
 const checkAssociation = (model) => {
     return 'associate' in model;
@@ -44,6 +45,7 @@ const db = {
     User: (0, user_model_1.user)(sequelize, sequelize_1.DataTypes),
     AccessToken: (0, access_token_model_1.accessToken)(sequelize, sequelize_1.DataTypes),
     Product: (0, product_model_1.product)(sequelize, sequelize_1.DataTypes),
+    Category: (0, category_model_1.category)(sequelize, sequelize_1.DataTypes),
     models: sequelize.models
 };
 Object.entries(db).forEach(([, model]) => {

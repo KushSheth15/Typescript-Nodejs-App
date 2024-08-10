@@ -26,21 +26,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv = __importStar(require("dotenv"));
-const express_1 = __importDefault(require("express"));
-dotenv.config();
-const user_route_1 = __importDefault(require("./routes/user.route"));
-const product_route_1 = __importDefault(require("./routes/product.route"));
-const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use('/api', user_route_1.default);
-app.use('/api', product_route_1.default);
-app.use((err, req, res, next) => {
-    if (err.statusCode) {
-        res.status(err.statusCode).json({ message: err.message, code: err.code });
+const crypto = __importStar(require("crypto"));
+const config_1 = __importDefault(require("../config/config"));
+class Encryption {
+    secret;
+    iv;
+    constructor(encryptionKeys = {}) {
+        this.secret = Buffer.from(encryptionKeys.secret || config_1.default.ENCRYPTION.SECRET, 'hex');
+        this.iv = Buffer.from(encryptionKeys.iv || config_1.default.ENCRYPTION.IV, 'hex');
     }
-    else {
-        res.status(500).json({ message: 'Internal Server Error' });
+    encryptWithAES(text) {
+        const cipher = crypto.createCipheriv('aes-256-cbc', this.secret, this.iv);
+        let encrypted = cipher.update(text, 'utf8', 'base64');
+        encrypted += cipher.final('base64');
+        return encrypted;
     }
-});
-exports.default = app;
+    decryptWithAES(cipherText) {
+        const decipher = crypto.createDecipheriv('aes-256-cbc', this.secret, this.iv);
+        let decrypted = decipher.update(cipherText, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    }
+}
+const encryption = new Encryption();
+exports.default = encryption;

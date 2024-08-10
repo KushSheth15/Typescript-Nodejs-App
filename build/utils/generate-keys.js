@@ -22,25 +22,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv = __importStar(require("dotenv"));
-const express_1 = __importDefault(require("express"));
-dotenv.config();
-const user_route_1 = __importDefault(require("./routes/user.route"));
-const product_route_1 = __importDefault(require("./routes/product.route"));
-const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use('/api', user_route_1.default);
-app.use('/api', product_route_1.default);
-app.use((err, req, res, next) => {
-    if (err.statusCode) {
-        res.status(err.statusCode).json({ message: err.message, code: err.code });
-    }
-    else {
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
-exports.default = app;
+const crypto = __importStar(require("crypto"));
+// Generate a new IV
+const iv = crypto.randomBytes(16).toString('hex');
+console.log('IV:', iv);
+// Generate a new Secret Key
+const secret = crypto.randomBytes(32).toString('hex');
+console.log('Secret Key:', secret);

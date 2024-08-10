@@ -8,5 +8,11 @@ dotenv_1.default.config();
 exports.default = {
     JWT: {
         SECRET: process.env.JWT_SECRET
-    }
+    },
+    ENCRYPTION: {
+        IV: process.env.ENCRYPTION_IV,
+        SECRET: process.env.ENCRYPTION_SECRET,
+        PASSWORD_SALT: process.env.ENCRYPTION_PASSWORD_SALT,
+        PASSWORD_ITERATIONS: Number(process.env.ENCRYPTION_PASSWORD_ITERATIONS) || 1000,
+    },
 };

@@ -5,6 +5,7 @@ import ApiResponse from '../utils/api-response';
 import asyncHandler from '../utils/async-handler';
 import db from '../sequelize-client';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.token';
+import encryption from '../utils/encryption';
 import User from '../models/user.model';
 
 interface MyUserRequest extends Request{
@@ -55,19 +56,21 @@ export const loginUser = asyncHandler(async (req: Request, res: Response, next: 
     };
 
     const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-
     const refreshToken = generateRefreshToken({ userId: user.id });
+
+    const encryptedAccessToken = encryption.encryptWithAES(accessToken);
+    const encryptedRefreshToken = encryption.encryptWithAES(refreshToken);
 
     await db.AccessToken.bulkCreate([
       {
         tokenType: 'ACCESS',
-        token: accessToken,
+        token: encryptedAccessToken,
         userId: user.id,
         expiredAt: new Date(Date.now() + 15 * 60 * 1000),
       },
       {
         tokenType: 'REFRESH',
-        token: refreshToken,
+        token: encryptedRefreshToken,
         userId: user.id,
         expiredAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       }
