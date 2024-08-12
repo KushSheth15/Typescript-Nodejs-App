@@ -1,8 +1,7 @@
 import Sequelize,{CreationOptional, ForeignKey, Model } from 'sequelize';
-import db from '../sequelize-client'; // Adjust the path as necessary
-import User from './user.model'; // Adjust the path as necessary
+import db from '../sequelize-client'; 
+import User from './user.model'; 
 
-// Define the attributes required for the AccessToken model
 interface AccessTokenModelCreationAttributes {
   tokenType: 'ACCESS' | 'RESET' | 'REFRESH';
   token: string;
