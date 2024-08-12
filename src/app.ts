@@ -1,15 +1,13 @@
 import * as dotenv from 'dotenv';
 import express from 'express';
 dotenv.config();
-import userRoutes from './routes/user.route';
-import productRoutes from './routes/product.route';
-import categoryRoutes from './routes/category.route';
+
+import router from './routes/index.route';
+import {REST_API_PREFIX} from'./constants/routes.constants'
 const app = express();
 
 app.use(express.json());
-app.use('/api', userRoutes);
-app.use('/api',productRoutes);
-app.use('/api',categoryRoutes);
+app.use(REST_API_PREFIX.API_V1 , router);
 
 app.use((err: any, req: any, res: any, next: any) => {
     if (err.statusCode) {

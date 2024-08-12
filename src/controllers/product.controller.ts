@@ -4,22 +4,23 @@ import ApiError from "../utils/api-error";
 import ApiResponse from "../utils/api-response";
 import asyncHandler from "../utils/async-handler";
 import User from "../models/user.model";
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/messages'
 
-interface NewRequest extends Request{
+interface NewRequest extends Request {
     token?: string;
     user?: User;
 }
 
 export const createProduct = asyncHandler(async (req: NewRequest, res: Response, next: NextFunction) => {
-    const { name, price, description,categoryId } = req.body;
+    const { name, price, description, categoryId } = req.body;
     const user = req.user;
 
     if (!user) {
-        return next(new ApiError(401, 'User not authenticated'));
+        return next(new ApiError(401, ERROR_MESSAGES.USER_NOT_FOUND));
     }
 
-    if(!name || !price || !description || !categoryId) {
-        return next(new ApiError(401,'All fields are required'));
+    if (!name || !price || !description || !categoryId) {
+        return next(new ApiError(401, ERROR_MESSAGES.REQUIRED_FIELDS));
     };
 
     try {
@@ -32,35 +33,35 @@ export const createProduct = asyncHandler(async (req: NewRequest, res: Response,
             userId: user.id
         });
 
-        const response = new ApiResponse(201,product, 'Product created successfully');
+        const response = new ApiResponse(201, product, SUCCESS_MESSAGES.PRODUCT_CREATED);
         res.status(201).json(response);
     } catch (error) {
-        console.log("Error in creating product",error);
-        return next(new ApiError(500, 'Internal server error', [error]));
+        console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 })
 
 export const getProducts = asyncHandler(async (req: NewRequest, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) {
-        return next(new ApiError(401, 'User not authenticated'));
+        return next(new ApiError(401, ERROR_MESSAGES.USER_NOT_FOUND));
     }
 
     try {
-        const product = await db.Product.findAll({where: {userId: user.id}});
-        const response = new ApiResponse(200, product,"Products get successfull");
+        const product = await db.Product.findAll({ where: { userId: user.id } });
+        const response = new ApiResponse(200, product, SUCCESS_MESSAGES.PRODUCTS_RETRIEVED);
         res.status(200).json(response);
     } catch (error) {
-        console.log("Error in fetching product", error);
-        return next(new ApiError(500, 'Internal server error', [error]));
+        console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });
 
-export const deleteProduct = asyncHandler(async(req: NewRequest, res: Response, next: NextFunction) => {
+export const deleteProduct = asyncHandler(async (req: NewRequest, res: Response, next: NextFunction) => {
     const user = req.user;
-    const {id} = req.params;
-    if(!user){
-        return next(new ApiError(401, 'User not authenticated- So cannot delete products'));
+    const { id } = req.params;
+    if (!user) {
+        return next(new ApiError(401, ERROR_MESSAGES.USER_NOT_FOUND));
     }
 
     try {
@@ -68,41 +69,41 @@ export const deleteProduct = asyncHandler(async(req: NewRequest, res: Response, 
         const result = await db.sequelize.query(`
             DELETE FROM products WHERE user_id=:userId AND id=:productId        
         `, {
-            replacements:{userId:user.id, productId:id},
-            type:'RAW'
+            replacements: { userId: user.id, productId: id },
+            type: 'RAW'
         });
 
         const affectedRows = Number(result);
 
         if (affectedRows === 0) {
-            return next(new ApiError(404, 'Product not found or not authorized to delete'));
+            return next(new ApiError(404, ERROR_MESSAGES.PRODUCT_NOT_FOUND));
         }
 
-        const response = new ApiResponse(200,"Product deleted successfully");
+        const response = new ApiResponse(200, SUCCESS_MESSAGES.PRODUCT_DELETED);
         res.status(200).json(response);
 
     } catch (error) {
-        console.log("Error deleting product",error);
-        return next(new ApiError(500, 'Internal server error', [error]));
+        console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });
 
-export const updateProduct = asyncHandler(async(req: NewRequest, res: Response, next: NextFunction) => {
-    const {id} = req.params;
+export const updateProduct = asyncHandler(async (req: NewRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
     const user = req.user;
-    if(!user){
-        return next(new ApiError(401, 'User not authenticated- So cannot update products'));
+    if (!user) {
+        return next(new ApiError(401, ERROR_MESSAGES.USER_NOT_FOUND));
     }
-    const {name,description,price,categoryId} = req.body;
+    const { name, description, price, categoryId } = req.body;
 
     try {
         const product = await db.Product.findByPk(id);
-        if(!product){
-            return next(new ApiError(404, 'Product not found'));
+        if (!product) {
+            return next(new ApiError(404, ERROR_MESSAGES.PRODUCT_NOT_FOUND));
         };
 
         if (product.userId !== user.id) {
-            return next(new ApiError(403, 'You do not have permission to update this product'));
+            return next(new ApiError(403, ERROR_MESSAGES.PERMISSION_DENIED));
         };
 
         const updateProduct = await product.update({
@@ -111,14 +112,14 @@ export const updateProduct = asyncHandler(async(req: NewRequest, res: Response, 
             price,
             categoryId
         },
-        {
-            where:{userId:user.id}
-        });
+            {
+                where: { userId: user.id }
+            });
 
-        const response = new ApiResponse(200,updateProduct,"Product updated successfully");
+        const response = new ApiResponse(200, updateProduct, SUCCESS_MESSAGES.PRODUCT_UPDATED);
         res.status(200).json(response);
     } catch (error) {
-        console.log("Error updating product",error);
-        return next(new ApiError(500, 'Internal server error', [error]));
+        console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });

@@ -7,6 +7,7 @@ import db from '../sequelize-client';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.token';
 import encryption from '../utils/encryption';
 import User from '../models/user.model';
+import {ERROR_MESSAGES,SUCCESS_MESSAGES} from '../constants/messages'
 
 interface MyUserRequest extends Request{
   token?: string;
@@ -17,7 +18,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response, nex
   const { email, password, firstName, lastName } = req.body;
 
   if (!email || !password) {
-    return next(new ApiError(400, 'Email and password required'));
+    return next(new ApiError(400, ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED));
   }
 
   try {
@@ -28,11 +29,11 @@ export const registerUser = asyncHandler(async (req: Request, res: Response, nex
       lastName,
     });
 
-    const response = new ApiResponse(201, newUser, 'User created successfully');
+    const response = new ApiResponse(201, newUser, SUCCESS_MESSAGES.USER_CREATED);
     res.status(201).json(response);
   } catch (error) {
-    console.error('Error creating user:', error);
-    return next(new ApiError(500, 'Internal server error', [error]));
+    console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+    return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
   }
 });
 
@@ -41,18 +42,18 @@ export const loginUser = asyncHandler(async (req: Request, res: Response, next: 
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return next(new ApiError(400, 'Email and password required'));
+    return next(new ApiError(400, ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED));
   }
 
   try {
     const user = await db.User.findOne({ where: { email } });
     if (!user) {
-      return next(new ApiError(404, 'User not found'));
+      return next(new ApiError(404, ERROR_MESSAGES.USER_NOT_FOUND));
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return next(new ApiError(401, "Invalid credentials"));
+      return next(new ApiError(401, ERROR_MESSAGES.INVALID_CREDENTIALS));
     };
 
     const accessToken = generateAccessToken({ userId: user.id, email: user.email });
@@ -76,11 +77,11 @@ export const loginUser = asyncHandler(async (req: Request, res: Response, next: 
       }
     ]);
 
-    const response = new ApiResponse(201, { accessToken, refreshToken, user }, 'Login Successfully')
+    const response = new ApiResponse(201, { accessToken, refreshToken, user },SUCCESS_MESSAGES.LOGIN_SUCCESS)
     res.status(200).send(response);
   } catch (error) {
-    console.error('Error logging in user:', error);
-    return next(new ApiError(500, 'Internal server error', [error]));
+    console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+    return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
   }
 });
 
@@ -89,35 +90,35 @@ export const changePassword = asyncHandler(async (req: MyUserRequest, res: Respo
   const user = req.user as User;
 
   if (!user) {
-    return next(new ApiError(401, 'User not authenticated'));
+    return next(new ApiError(401, ERROR_MESSAGES.USER_NOT_FOUND));
   }
 
   if (!oldPassword || !newPassword) {
-    return next(new ApiError(400, 'Old password and new password required'));
+    return next(new ApiError(400, ERROR_MESSAGES.OLD_PASSWORD_NEW_PASSWORD_REQUIRED));
   }
 
   try {
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return next(new ApiError(401, 'Old password is incorrect'));
+      return next(new ApiError(401, ERROR_MESSAGES.PASSWORD_NOT_MATCHED));
     }
 
     // Update the user's password
     user.password = newPassword;
     await user.save();
 
-    const response = new ApiResponse(200, null, 'Password updated successfully');
+    const response = new ApiResponse(200, null, SUCCESS_MESSAGES.PASSWORD_UPDATED);
     res.json(response);
   } catch (error) {
-    console.error('Error changing password:', error);
-    return next(new ApiError(500, 'Internal server error'));
+    console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+    return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
   }
 })
 
 export const logoutUser = asyncHandler(async (req: MyUserRequest, res: Response, next: NextFunction) => {
   const token = req.token;
   if (!token) {
-    return next(new ApiError(401, 'User not authenticated'));
+    return next(new ApiError(401, ERROR_MESSAGES.TOKEN_NOT_FOUND));
   }
 
   try {
@@ -126,18 +127,18 @@ export const logoutUser = asyncHandler(async (req: MyUserRequest, res: Response,
     });
 
     if (deletedToken === 0) {
-      return next(new ApiError(401, 'Unauthorized-Token not found'));
+      return next(new ApiError(401, ERROR_MESSAGES.TOKEN_NOT_FOUND));
     }
 
     await db.AccessToken.destroy({
       where: { userId: req.user?.id, tokenType: 'REFRESH' }
     });
 
-    const response = new ApiResponse(200, null, 'Logged out successfully');
+    const response = new ApiResponse(200, null, SUCCESS_MESSAGES.LOGOUT_SUCCESS);
     res.status(200).json(response);
 
   } catch (error) {
-    console.error('Error logging out:', error);
-    return next(new ApiError(500, 'Internal server error', [error]));
+    console.error(ERROR_MESSAGES.SOMETHING_ERROR, error);
+    return next(new ApiError(500, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
   }
 })
