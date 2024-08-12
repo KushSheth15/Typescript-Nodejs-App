@@ -11,22 +11,24 @@ interface NewRequest extends Request{
 }
 
 export const createProduct = asyncHandler(async (req: NewRequest, res: Response, next: NextFunction) => {
-    const { name, price, description } = req.body;
+    const { name, price, description,categoryId } = req.body;
     const user = req.user;
 
     if (!user) {
         return next(new ApiError(401, 'User not authenticated'));
     }
 
-    if(!name || !price || !description) {
+    if(!name || !price || !description || !categoryId) {
         return next(new ApiError(401,'All fields are required'));
     };
 
     try {
+
         const product = await db.Product.create({
             name,
             price,
             description,
+            categoryId,
             userId: user.id
         });
 
@@ -62,7 +64,20 @@ export const deleteProduct = asyncHandler(async(req: NewRequest, res: Response, 
     }
 
     try {
-        const deleteProduct = await db.Product.destroy({where:{userId: user.id, id: id}});
+        // const deleteProduct = await db.Product.destroy({where:{userId: user.id, id: id}});
+        const result = await db.sequelize.query(`
+            DELETE FROM products WHERE user_id=:userId AND id=:productId        
+        `, {
+            replacements:{userId:user.id, productId:id},
+            type:'RAW'
+        });
+
+        const affectedRows = Number(result);
+
+        if (affectedRows === 0) {
+            return next(new ApiError(404, 'Product not found or not authorized to delete'));
+        }
+
         const response = new ApiResponse(200,"Product deleted successfully");
         res.status(200).json(response);
 
@@ -78,7 +93,7 @@ export const updateProduct = asyncHandler(async(req: NewRequest, res: Response, 
     if(!user){
         return next(new ApiError(401, 'User not authenticated- So cannot update products'));
     }
-    const {name,description,price} = req.body;
+    const {name,description,price,categoryId} = req.body;
 
     try {
         const product = await db.Product.findByPk(id);
@@ -86,10 +101,15 @@ export const updateProduct = asyncHandler(async(req: NewRequest, res: Response, 
             return next(new ApiError(404, 'Product not found'));
         };
 
+        if (product.userId !== user.id) {
+            return next(new ApiError(403, 'You do not have permission to update this product'));
+        };
+
         const updateProduct = await product.update({
             name,
             description,
-            price
+            price,
+            categoryId
         },
         {
             where:{userId:user.id}

@@ -7,7 +7,7 @@ interface AccessTokenModelCreationAttributes {
   tokenType: 'ACCESS' | 'RESET' | 'REFRESH';
   token: string;
   userId: string;
-  expiredAt: Date;
+  expiredAt?: Date;
 }
 
 interface AccessTokenModelAttributes extends AccessTokenModelCreationAttributes {

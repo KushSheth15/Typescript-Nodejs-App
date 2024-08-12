@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize';
 import db from '../sequelize-client';
 
-async function setupViews(sequelize: Sequelize) {
+async function setupViews(sequelize: Sequelize): Promise<boolean> {
     try {
         console.log('Starting view setup...');
 
@@ -19,13 +19,9 @@ async function setupViews(sequelize: Sequelize) {
             FROM
                 users
             JOIN
-                products
-            ON  
-                users.id = products.user_id
+                products ON users.id = products.user_id
             JOIN
-                categories
-            ON
-                products.category_id = categories.id;
+                categories ON products.category_id = categories.id;
         `);
 
         console.log('User-Product-Category view created successfully.');
@@ -42,22 +38,23 @@ async function setupViews(sequelize: Sequelize) {
                 SUM(products.price) AS total_price
             FROM
                 users
-            LEFT JOIN
-                products
-            ON
-                users.id = products.user_id
-            LEFT JOIN
-                categories
-            ON
-                products.category_id = categories.id
-            GROUP BY
-                users.id, categories.id;
+            LEFT JOIN products ON users.id = products.user_id
+            LEFT JOIN categories ON products.category_id = categories.id
+            GROUP BY users.id, categories.id;
         `);
 
         console.log('User-Product-Category-Summary materialized view created successfully.');
 
-    } catch (error) {
-        console.error('Error setting up views:', error);
+        return true;
+
+    } catch (error: any) {
+        if (error.parent?.code === '42P07') { // PostgreSQL error code for "relation already exists"
+            console.log('Views or materialized views already exist. Skipping setup.');
+            return false;
+        } else {
+            console.error('Error setting up views:', error);
+            throw error;
+        }
     }
 }
 

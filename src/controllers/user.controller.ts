@@ -66,7 +66,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response, next: 
         tokenType: 'ACCESS',
         token: encryptedAccessToken,
         userId: user.id,
-        expiredAt: new Date(Date.now() + 15 * 60 * 1000),
+        expiredAt: new Date(Date.now() + 60 * 60 * 1000),
       },
       {
         tokenType: 'REFRESH',
