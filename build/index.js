@@ -30,11 +30,26 @@ const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const app_1 = __importDefault(require("./app"));
 const sequelize_client_1 = __importDefault(require("./sequelize-client"));
+const setup_views_1 = __importDefault(require("./utils/setup-views"));
+const refresh_materialized_view_1 = require("./utils/refresh-materialized-view");
 const PORT = process.env.PORT;
 const startServer = async () => {
     try {
+        const setup = await (0, setup_views_1.default)(sequelize_client_1.default.sequelize);
+        if (setup) {
+            console.log('Views were created.');
+        }
+        else {
+            console.log('Views already existed, no need to create them.');
+        }
+    }
+    catch (error) {
+        console.log('Error during view setup:', error);
+    }
+    try {
         await sequelize_client_1.default.sequelize.sync({ force: false });
         console.log('Database connected successfully.');
+        (0, refresh_materialized_view_1.refreshMaterializedView)();
         app_1.default.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });

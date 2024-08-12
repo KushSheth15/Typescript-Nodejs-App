@@ -29,12 +29,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 const express_1 = __importDefault(require("express"));
 dotenv.config();
-const user_route_1 = __importDefault(require("./routes/user.route"));
-const product_route_1 = __importDefault(require("./routes/product.route"));
+const index_route_1 = __importDefault(require("./routes/index.route"));
+const routes_constants_1 = require("./constants/routes.constants");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
-app.use('/api', user_route_1.default);
-app.use('/api', product_route_1.default);
+app.use(routes_constants_1.REST_API_PREFIX.API_V1, index_route_1.default);
 app.use((err, req, res, next) => {
     if (err.statusCode) {
         res.status(err.statusCode).json({ message: err.message, code: err.code });

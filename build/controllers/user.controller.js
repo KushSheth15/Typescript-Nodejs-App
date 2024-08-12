@@ -11,10 +11,11 @@ const async_handler_1 = __importDefault(require("../utils/async-handler"));
 const sequelize_client_1 = __importDefault(require("../sequelize-client"));
 const jwt_token_1 = require("../utils/jwt.token");
 const encryption_1 = __importDefault(require("../utils/encryption"));
+const messages_1 = require("../constants/messages");
 exports.registerUser = (0, async_handler_1.default)(async (req, res, next) => {
     const { email, password, firstName, lastName } = req.body;
     if (!email || !password) {
-        return next(new api_error_1.default(400, 'Email and password required'));
+        return next(new api_error_1.default(400, messages_1.ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED));
     }
     try {
         const newUser = await sequelize_client_1.default.User.create({
@@ -23,27 +24,27 @@ exports.registerUser = (0, async_handler_1.default)(async (req, res, next) => {
             firstName,
             lastName,
         });
-        const response = new api_response_1.default(201, newUser, 'User created successfully');
+        const response = new api_response_1.default(201, newUser, messages_1.SUCCESS_MESSAGES.USER_CREATED);
         res.status(201).json(response);
     }
     catch (error) {
-        console.error('Error creating user:', error);
-        return next(new api_error_1.default(500, 'Internal server error', [error]));
+        console.error(messages_1.ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new api_error_1.default(500, messages_1.ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });
 exports.loginUser = (0, async_handler_1.default)(async (req, res, next) => {
     const { email, password } = req.body;
     if (!email || !password) {
-        return next(new api_error_1.default(400, 'Email and password required'));
+        return next(new api_error_1.default(400, messages_1.ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED));
     }
     try {
         const user = await sequelize_client_1.default.User.findOne({ where: { email } });
         if (!user) {
-            return next(new api_error_1.default(404, 'User not found'));
+            return next(new api_error_1.default(404, messages_1.ERROR_MESSAGES.USER_NOT_FOUND));
         }
         const isMatch = await bcrypt_1.default.compare(password, user.password);
         if (!isMatch) {
-            return next(new api_error_1.default(401, "Invalid credentials"));
+            return next(new api_error_1.default(401, messages_1.ERROR_MESSAGES.INVALID_CREDENTIALS));
         }
         ;
         const accessToken = (0, jwt_token_1.generateAccessToken)({ userId: user.id, email: user.email });
@@ -55,7 +56,7 @@ exports.loginUser = (0, async_handler_1.default)(async (req, res, next) => {
                 tokenType: 'ACCESS',
                 token: encryptedAccessToken,
                 userId: user.id,
-                expiredAt: new Date(Date.now() + 15 * 60 * 1000),
+                expiredAt: new Date(Date.now() + 60 * 60 * 1000),
             },
             {
                 tokenType: 'REFRESH',
@@ -64,59 +65,59 @@ exports.loginUser = (0, async_handler_1.default)(async (req, res, next) => {
                 expiredAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             }
         ]);
-        const response = new api_response_1.default(201, { accessToken, refreshToken, user }, 'Login Successfully');
+        const response = new api_response_1.default(201, { accessToken, refreshToken, user }, messages_1.SUCCESS_MESSAGES.LOGIN_SUCCESS);
         res.status(200).send(response);
     }
     catch (error) {
-        console.error('Error logging in user:', error);
-        return next(new api_error_1.default(500, 'Internal server error', [error]));
+        console.error(messages_1.ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new api_error_1.default(500, messages_1.ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });
 exports.changePassword = (0, async_handler_1.default)(async (req, res, next) => {
     const { oldPassword, newPassword } = req.body;
     const user = req.user;
     if (!user) {
-        return next(new api_error_1.default(401, 'User not authenticated'));
+        return next(new api_error_1.default(401, messages_1.ERROR_MESSAGES.USER_NOT_FOUND));
     }
     if (!oldPassword || !newPassword) {
-        return next(new api_error_1.default(400, 'Old password and new password required'));
+        return next(new api_error_1.default(400, messages_1.ERROR_MESSAGES.OLD_PASSWORD_NEW_PASSWORD_REQUIRED));
     }
     try {
         const isMatch = await bcrypt_1.default.compare(oldPassword, user.password);
         if (!isMatch) {
-            return next(new api_error_1.default(401, 'Old password is incorrect'));
+            return next(new api_error_1.default(401, messages_1.ERROR_MESSAGES.PASSWORD_NOT_MATCHED));
         }
         // Update the user's password
         user.password = newPassword;
         await user.save();
-        const response = new api_response_1.default(200, null, 'Password updated successfully');
+        const response = new api_response_1.default(200, null, messages_1.SUCCESS_MESSAGES.PASSWORD_UPDATED);
         res.json(response);
     }
     catch (error) {
-        console.error('Error changing password:', error);
-        return next(new api_error_1.default(500, 'Internal server error'));
+        console.error(messages_1.ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new api_error_1.default(500, messages_1.ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });
 exports.logoutUser = (0, async_handler_1.default)(async (req, res, next) => {
     const token = req.token;
     if (!token) {
-        return next(new api_error_1.default(401, 'User not authenticated'));
+        return next(new api_error_1.default(401, messages_1.ERROR_MESSAGES.TOKEN_NOT_FOUND));
     }
     try {
         const deletedToken = await sequelize_client_1.default.AccessToken.destroy({
             where: { token, tokenType: 'ACCESS' }
         });
         if (deletedToken === 0) {
-            return next(new api_error_1.default(401, 'Unauthorized-Token not found'));
+            return next(new api_error_1.default(401, messages_1.ERROR_MESSAGES.TOKEN_NOT_FOUND));
         }
         await sequelize_client_1.default.AccessToken.destroy({
             where: { userId: req.user?.id, tokenType: 'REFRESH' }
         });
-        const response = new api_response_1.default(200, null, 'Logged out successfully');
+        const response = new api_response_1.default(200, null, messages_1.SUCCESS_MESSAGES.LOGOUT_SUCCESS);
         res.status(200).json(response);
     }
     catch (error) {
-        console.error('Error logging out:', error);
-        return next(new api_error_1.default(500, 'Internal server error', [error]));
+        console.error(messages_1.ERROR_MESSAGES.SOMETHING_ERROR, error);
+        return next(new api_error_1.default(500, messages_1.ERROR_MESSAGES.INTERNAL_SERVER_ERROR, [error]));
     }
 });

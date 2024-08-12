@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "build": "rimraf ./build&& tsc && tscp",
+    "build": "rimraf ./build && tsc && tscp",
     "dev": "nodemon src/index.ts",
     "lint": "esw --ext .json,.ts, src --color",
     "lint:fix": "eslint src --ext .json,.ts, --fix",
